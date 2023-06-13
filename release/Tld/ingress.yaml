@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-service
+  namespace: backend
+  annotations:
+    cert-manager.io/issuer: letsencrypt-nginx
+spec:
+  tls:
+    - hosts:
+        - raisehand.software
+      secretName: letsencrypt-nginx-appname
+  rules:
+    - host: raisehand.software
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: appname
+                port:
+                  number: 80
+  ingressClassName: nginx

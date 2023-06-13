@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: appname-depl
+  namespace: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: appname
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: appname
+    spec:
+      containers:
+        - name: backend
+          image: repo/appname
+          resources:
+            requests:
+              cpu: 100m
+              memory: 50Mi
+            limits:
+              cpu: 200m
+              memory: 100Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: appname
+  namespace: backend
+spec:
+  selector:
+    app: appname
+  ports:
+    - name: appname
+      port: 80
+      targetPort: 3000

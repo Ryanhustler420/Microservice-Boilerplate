@@ -153,6 +153,20 @@ Make sure you create a `namespace` using inside `skaffold.yaml` file
 6.  Port Forward the browser to ingress using command **`kubectl port-forward pod/ingress-nginx-controller-5d88495688-dxxgw --address 0.0.0.0 80:80 443:443 -n ingress-nginx`**
 7.  When done **`skaffold delete`**
 
+**NodePort**
+
+```bash
+kubectl create namespace testing
+kubectl apply -f nodeapp.yaml # Has NodePort Service
+kubectl get svc -n testing
+kubectl port-forward svc/nodeapp-service 30002:30002 -n testing
+minikube service nodeapp-service --url
+minikube ip
+
+# kubectl get pod -n testing
+# kubectl port-forward pod/nodeapp-app 3000:3000 -n testing
+```
+
 **Issues**
 
 - [App Not Working In Browser](https://stackoverflow.com/a/68966125)
@@ -163,12 +177,22 @@ Make sure you create a `namespace` using inside `skaffold.yaml` file
 
 Prerequisite
 
+- `Minikube`
+- `Skaffold`
 - `kubectl`
+- `Docker`
 - `doctl`
 - `Helm`
+- `Git`
 
 1.  Create a cluster
 2.  Config your `kubectl` which should point to digital ocean cluster
+
+```bash
+kubectl config view
+kubectl get nodes
+```
+
 3.  Open [Artifacthub](https://artifacthub.io/packages/helm/ingress-nginx/ingress-nginx)
 4.  Run these given commands
 
@@ -204,6 +228,27 @@ kubectl get svc -n ingress-nginx
 7.  Open load balancer ip address to browser `it should show 404 page`.
 
 8.  Configure the domain name which will point to load balancer ip address
+
+Add these to custom DNS of your nameserver
+
+```bash
+- ns1.digitalocean.com
+- ns2.digitalocean.com
+- ns3.digitalocean.com
+```
+
+Add these to your digital oceans domain settings
+
+```bash
+A	      -	@       <Load Balance Id>       30
+CNAME	  -	www     @                       30
+```
+
+Set any secret if you have before deploying anything into your cluster
+
+```bash
+kubectl create secret generic appname-secret --from-literal=APPNAME_KEY=xxxxxxxxxx
+```
 
 9.  Create a `Deployment` config file name `app-depl.yaml`
 
@@ -369,6 +414,30 @@ kubectl -n backend get certificaterequests
 ```cmd
 curl https://appname.com
 ```
+
+# Wildcard Integration
+
+Need to write here
+
+# CI/CD
+
+### Initially
+
+1.  Create a Githib Repository
+2.  Create workflows actions for each service
+3.  Create env variables used in workflow inside that repositories settings
+4.  Remote attach your project with that repository
+5.  Pull all the changes from master first
+6.  Push your code to master branch for the **`first time`**
+
+NOTE: **Make sure you change something on the `infra/` so that for the first time it deploy**
+
+### After
+
+1.  Pull the master branch first
+2.  Checkout another branch example **`dev`**
+3.  Commit the release into another branch example **`dev`**
+4.  Review and merge pull request to **`master`**
 
 # Author
 
