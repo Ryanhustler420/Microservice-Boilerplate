@@ -157,6 +157,219 @@ Make sure you create a `namespace` using inside `skaffold.yaml` file
 
 - [App Not Working In Browser](https://stackoverflow.com/a/68966125)
 
+<br />
+
+# 🐟 Deploy [Digital Ocean]()
+
+Prerequisite
+
+- `kubectl`
+- `doctl`
+- `Helm`
+
+1.  Create a cluster
+2.  Config your `kubectl` which should point to digital ocean cluster
+3.  Open [Artifacthub](https://artifacthub.io/packages/helm/ingress-nginx/ingress-nginx)
+4.  Run these given commands
+
+```bash
+helm repo list
+helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+helm repo update ingress-nginx
+```
+
+5.  Create a `nginx-helm-values.yaml` file
+
+```yaml
+controller:
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 90Mi
+```
+
+6.  Run these given commands
+
+```bash
+kubectl create ns ingress-nginx
+helm install ingress-nginx ingress-nginx/ingress-nginx -n ingress-nginx -f nginx-helm-values.yaml
+```
+
+```bash
+kubectl get all -n ingress-nginx
+kubectl get svc -n ingress-nginx
+```
+
+7.  Open load balancer ip address to browser `it should show 404 page`.
+
+8.  Configure the domain name which will point to load balancer ip address
+
+9.  Create a `Deployment` config file name `app-depl.yaml`
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app
+  namespace: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: app
+    spec:
+      containers:
+        - name: backend
+          image: repo/nodeapp
+          resources:
+            requests:
+              cpu: 100m
+              memory: 50Mi
+            limits:
+              cpu: 200m
+              memory: 100Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: app
+  namespace: backend
+spec:
+  selector:
+    app: app
+  ports:
+    - name: http
+      port: 80
+      targetPort: 3000
+```
+
+10. Run these given commands
+
+```bash
+kubectl create ns backend
+kubectl apply -f app-depl.yaml
+kubectl get all -n backend
+```
+
+11. Create an ingress config `ingress.yaml`
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-service
+  namespace: backend
+  annotations:
+    cert-manager.io/issuer: letsencrypt-nginx
+spec:
+  tls:
+    - hosts:
+        - appname.com
+      secretName: letsencrypt-nginx-app
+  rules:
+    - host: appname.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: app
+                port:
+                  number: 80
+  ingressClassName: nginx
+```
+
+12. Run these given commands
+
+```bash
+kubectl apply -f ingress.yaml
+kubectl -n backend get ingress
+```
+
+```bash
+curl -li http://appname.com
+```
+
+13. Get Helm [CertManager](https://artifacthub.io/packages/helm/cert-manager/cert-manager)
+
+```bash
+kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.12.1/cert-manager.crds.yaml
+kubectl get crds
+helm repo add cert-manager https://charts.jetstack.io
+helm repo list
+helm repo update cert-manager
+```
+
+14. Create a `cert-manager-values.yaml` file
+
+```yaml
+installCRDs: false
+
+# Required only if you want to monitor cert-manager activity
+prometheus:
+  enabled: false
+```
+
+15. Run these given commands
+
+```bash
+kubectl create ns cert-manager
+helm install cert-manager -n cert-manager --version 1.12.1 cert-manager/cert-manager -f cert-manager-values.yaml
+```
+
+16. Create a `cert-manager-issuer.yaml` file
+
+```yaml
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: letsencrypt-nginx
+  namespace: backend
+spec:
+  acme:
+    email: validemail@gmail.com
+    server: https://acme-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      name: letsencrypt-nginx-private-key
+    solvers:
+      # Use the HTTP-01 challenge provider
+      - http01:
+          ingress:
+            class: nginx
+```
+
+```bash
+kubectl apply -f cert-manager-issuer.yaml
+```
+
+17. Run these given commands
+
+```bash
+kubectl get crds | grep cert-manager
+kubectl get issuer -A
+```
+
+```bash
+kubectl -n backend get order
+kubectl -n backend get issuer
+kubectl -n backend get secrets
+kubectl -n backend get challenges
+kubectl -n backend get certificate
+kubectl -n backend get certificaterequests
+```
+
+```cmd
+curl https://appname.com
+```
+
 # Author
 
 - [Gourav Gupta](https://gouravgupta.com)
