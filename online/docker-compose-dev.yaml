@@ -1,0 +1,25 @@
+version: '3'
+services:
+  mongodb:
+    restart: unless-stopped
+    image: mongo
+    volumes:
+      - appname-online:/data/db
+    ports:
+      - "27017:27017"
+  dev:
+    build:
+      dockerfile: Dockerfile.dev
+      context: .
+    restart: always
+    volumes:
+      - /app/node_modules
+      - .:/app
+    ports:
+      - "3001:3000"
+    environment:
+      - MONGO_DB_URI=mongodb
+      - ROUTE_VERSION=v2
+      - ENV=development
+volumes:
+  appname-online:

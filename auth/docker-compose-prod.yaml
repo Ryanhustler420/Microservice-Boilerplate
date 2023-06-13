@@ -1,0 +1,20 @@
+version: '3'
+services:
+  dev:
+    image: repo/appname-auth
+    restart: always
+    ports:
+      - "3001:3000"
+    environment:
+      - MONGO_DB_URI={PRODUCTION_URI}
+      - ROUTE_VERSION=v2
+      - ENV=development
+  live:
+    image: repo/appname-auth
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - MONGO_DB_URI={PRODUCTION_URI}
+      - ROUTE_VERSION=v1
+      - ENV=production

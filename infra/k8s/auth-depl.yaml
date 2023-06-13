@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: appname-auth-depl
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: appname-auth
+  template:
+    metadata:
+      labels:
+        app: appname-auth
+    spec:
+      containers:
+        - name: appname-auth
+          image: repo/appname-auth
+          resources:
+            requests:
+              memory: '128Mi'
+              cpu: '500m'
+            limits:
+              memory: '256Mi'
+              cpu: '700m'
+          env:
+            - name: MONGO_URI
+              value: "mongodb://appname-auth-mongo-srv:27017/auth"
+            # - name: JWT_KEY
+            #   valueFrom:
+            #     secretKeyRef:
+            #       name: jwt-secret
+            #       key: JWT_KEY
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: appname-auth-srv
+spec:
+  type: ClusterIP # you can remove this, since this is by default value if mention here
+  selector:
+    app: appname-auth
+  ports:
+    - port: 3000
+      targetPort: 3000
+      protocol: TCP
+      name: appname-auth

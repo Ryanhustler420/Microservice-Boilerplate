@@ -1,0 +1,34 @@
+# https://kubernetes.io/docs/tasks/access-application-cluster/ingress-minikube/#enable-the-ingress-controller
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-service-dev
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/use-regex: "true"
+spec:
+  rules:
+    - host: appname.dev
+      http:
+        paths:
+          - path: /api/users/?(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: appname-auth-srv
+                port:
+                  number: 3000
+          - path: /api/online/?(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: appname-online-srv
+                port:
+                  number: 3000
+          # - path: /.* # Will catch all, that's why it's at the bottom of all paths
+          #   pathType: Prefix
+          #   backend:
+          #     service:
+          #       name: appname-online-srv
+          #       port:
+          #         number: 3000
